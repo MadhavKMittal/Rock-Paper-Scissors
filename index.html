@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tic Tac Toe</title>
+
+<style>
+* {
+box-sizing: border-box;
+}
+
+body {
+margin: 0;
+min-height: 100vh;
+display: flex;
+justify-content: center;
+align-items: center;
+padding: 20px;
+font-family: Arial, sans-serif;
+color: white;
+background: linear-gradient(135deg, #0f172a, #312e81);
+}
+
+.game {
+width: 100%;
+max-width: 420px;
+padding: 28px 20px;
+text-align: center;
+background: #1e293b;
+border: 1px solid #475569;
+border-radius: 24px;
+box-shadow: 0 20px 50px #0005;
+}
+
+h1 {
+margin-top: 0;
+font-size: 30px;
+}
+
+.subtitle {
+color: #cbd5e1;
+}
+
+.scores {
+display: flex;
+justify-content: space-around;
+margin: 24px 0;
+padding: 15px;
+background: #0f172a;
+border-radius: 14px;
+}
+
+.score {
+margin-top: 6px;
+font-size: 25px;
+font-weight: bold;
+color: #a5b4fc;
+}
+
+.board {
+display: grid;
+grid-template-columns: repeat(3, 1fr);
+gap: 10px;
+margin: 20px auto;
+}
+
+.cell {
+aspect-ratio: 1;
+font-size: clamp(38px, 12vw, 56px);
+font-weight: bold;
+cursor: pointer;
+color: white;
+background: #334155;
+border: 2px solid #475569;
+border-radius: 14px;
+transition: 0.2s;
+}
+
+.cell:hover:enabled {
+background: #4338ca;
+transform: scale(1.03);
+}
+
+.cell.x {
+color: #67e8f9;
+}
+
+.cell.o {
+color: #c4b5fd;
+}
+
+button:focus-visible,
+select:focus-visible {
+outline: 3px solid #facc15;
+outline-offset: 3px;
+}
+
+.status {
+min-height: 28px;
+font-size: 18px;
+font-weight: bold;
+}
+
+select, .reset {
+padding: 12px 16px;
+border: none;
+border-radius: 10px;
+font-size: 15px;
+}
+
+select {
+color: white;
+background: #334155;
+max-width: 100%;
+}
+
+.reset {
+margin-top: 14px;
+color: white;
+background: #4f46e5;
+cursor: pointer;
+}
+
+.reset:hover {
+background: #6366f1;
+}
+
+.footer {
+margin-top: 22px;
+color: #94a3b8;
+font-size: 13px;
+}
+</style>
+</head>
+
+<body>
+<main class="game">
+<h1>⭕ Tic Tac Toe ❌</h1>
+<p class="subtitle">Three in a row wins the game!</p>
+
+<label for="mode">Game mode: </label>
+<select id="mode">
+<option value="computer">Play against Computer</option>
+<option value="two">Two Players</option>
+</select>
+
+<section class="scores">
+<div>
+<div id="labelX">You (X)</div>
+<div class="score" id="scoreX">0</div>
+</div>
+<div>
+<div>Draws</div>
+<div class="score" id="scoreDraw">0</div>
+</div>
+<div>
+<div id="labelO">Computer (O)</div>
+<div class="score" id="scoreO">0</div>
+</div>
+</section>
+
+<div class="board" id="board" aria-label="Tic Tac Toe board">
+<button class="cell" data-index="0" aria-label="Cell 1"></button>
+<button class="cell" data-index="1" aria-label="Cell 2"></button>
+<button class="cell" data-index="2" aria-label="Cell 3"></button>
+<button class="cell" data-index="3" aria-label="Cell 4"></button>
+<button class="cell" data-index="4" aria-label="Cell 5"></button>
+<button class="cell" data-index="5" aria-label="Cell 6"></button>
+<button class="cell" data-index="6" aria-label="Cell 7"></button>
+<button class="cell" data-index="7" aria-label="Cell 8"></button>
+<button class="cell" data-index="8" aria-label="Cell 9"></button>
+</div>
+
+<p class="status" id="status" aria-live="polite">
+Your turn! Choose a square.
+</p>
+
+<button class="reset" id="reset">↻ New Round</button>
+
+<p class="footer">Built with HTML, CSS & JavaScript</p>
+</main>
+
+<script>
+const cells = [...document.querySelectorAll(".cell")];
+const statusText = document.getElementById("status");
+const modeSelect = document.getElementById("mode");
+
+let board = Array(9).fill("");
+let currentPlayer = "X";
+let gameOver = false;
+let scores = { X: 0, O: 0, draw: 0 };
+
+const wins = [
+[0, 1, 2], [3, 4, 5], [6, 7, 8],
+[0, 3, 6], [1, 4, 7], [2, 5, 8],
+[0, 4, 8], [2, 4, 6]
+];
+
+function getWinner() {
+return wins.find(([a, b, c]) =>
+board[a] &&
+board[a] === board[b] &&
+board[a] === board[c]
+);
+}
+
+function render() {
+cells.forEach((cell, i) => {
+cell.textContent = board[i];
+cell.classList.toggle("x", board[i] === "X");
+cell.classList.toggle("o", board[i] === "O");
+cell.disabled = gameOver || board[i] !== "";
+});
+
+document.getElementById("scoreX").textContent = scores.X;
+document.getElementById("scoreO").textContent = scores.O;
+document.getElementById("scoreDraw").textContent = scores.draw;
+}
+
+function finishRound() {
+const winningLine = getWinner();
+
+if (winningLine) {
+gameOver = true;
+
+winningLine.forEach(i => {
+cells[i].style.background = "#166534";
+});
+
+scores[currentPlayer]++;
+statusText.textContent = currentPlayer + " wins! 🎉";
+} else if (board.every(Boolean)) {
+gameOver = true;
+scores.draw++;
+statusText.textContent = "It's a draw! 🤝";
+} else {
+currentPlayer = currentPlayer === "X" ? "O" : "X";
+statusText.textContent =
+modeSelect.value === "computer"
+? (currentPlayer === "X" ? "Your turn!" : "Computer is thinking...")
+: "Player " + currentPlayer + "'s turn!";
+}
+
+render();
+}
+
+function makeMove(index) {
+if (gameOver || board[index] !== "") return;
+
+board[index] = currentPlayer;
+
+if (getWinner() || board.every(Boolean)) {
+finishRound();
+return;
+}
+
+currentPlayer = currentPlayer === "X" ? "O" : "X";
+render();
+
+if (modeSelect.value === "computer" && currentPlayer === "O") {
+statusText.textContent = "Computer is thinking...";
+cells.forEach(cell => cell.disabled = true);
+
+setTimeout(() => {
+if (gameOver) return;
+
+const empty = board
+.map((value, i) => value === "" ? i : -1)
+.filter(i => i !== -1);
+
+if (!empty.length) return;
+
+const move = empty[Math.floor(Math.random() * empty.length)];
+board[move] = "O";
+finishRound();
+}, 400);
+}
+}
+
+function newRound() {
+board = Array(9).fill("");
+currentPlayer = "X";
+gameOver = false;
+
+cells.forEach(cell => {
+cell.style.background = "";
+});
+
+statusText.textContent =
+modeSelect.value === "computer"
+? "Your turn! Choose a square."
+: "Player X's turn!";
+
+render();
+}
+
+cells.forEach((cell, index) => {
+cell.addEventListener("click", () => makeMove(index));
+});
+
+document.getElementById("reset").addEventListener("click", newRound);
+
+modeSelect.addEventListener("change", () => {
+document.getElementById("labelX").textContent =
+modeSelect.value === "computer" ? "You (X)" : "Player X";
+
+document.getElementById("labelO").textContent =
+modeSelect.value === "computer" ? "Computer (O)" : "Player O";
+
+scores = { X: 0, O: 0, draw: 0 };
+newRound();
+});
+
+render();
+</script>
+</body>
+</html>
